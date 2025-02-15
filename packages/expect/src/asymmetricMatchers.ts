@@ -222,6 +222,8 @@ class ArrayContaining extends AsymmetricMatcher<Array<unknown>> {
 class ObjectContaining extends AsymmetricMatcher<
   Record<string | symbol, unknown>
 > {
+  lastSample: Record<string | symbol, unknown> | undefined;
+
   constructor(sample: Record<string | symbol, unknown>, inverse = false) {
     super(sample, inverse);
   }
@@ -238,18 +240,27 @@ class ObjectContaining extends AsymmetricMatcher<
 
     const matcherContext = this.getMatcherContext();
     const objectKeys = getObjectKeys(this.sample);
-
-    const otherKeys = other ? getObjectKeys(other) : [];
+    this.lastSample = undefined;
 
     for (const key of objectKeys) {
       if (
         !hasProperty(other, key) ||
         !equals(this.sample[key], other[key], matcherContext.customTesters)
       ) {
-        // Result has already been determined, mutation only affects diff output
-        for (const key of otherKeys) {
-          if (!hasProperty(this.sample, key)) {
-            this.sample[key] = other[key];
+        // To reduce noise in the diff for a non-inverted matcher, make a
+        // copy of the sample which includes any extra keys/values that are
+        // only present in other. We can't mutate the original sample because
+        // an ObjectContaining instance might be used more than once (for
+        // example, if passed to .toHaveBeenCalledWith).
+        if (!this.inverse && other && typeof other === 'object') {
+          this.lastSample = {};
+          for (const origKey of objectKeys) {
+            this.lastSample[origKey] = this.sample[origKey];
+          }
+          for (const otherKey of getObjectKeys(other)) {
+            if (!hasProperty(this.sample, otherKey)) {
+              this.lastSample[otherKey] = other[otherKey];
+            }
           }
         }
         result = false;

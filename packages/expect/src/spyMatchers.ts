@@ -143,6 +143,8 @@ const printExpectedReceivedCallsPositive = (
   isOnlyCall: boolean,
   iExpectedCall?: number,
 ) => {
+  // TODO this line needs a way to ignore lastSample
+  // (probably same with toHaveReturned)
   const expectedLine = `Expected: ${printExpectedArgs(expected)}\n`;
   if (indexedCalls.length === 0) {
     return expectedLine;

@@ -49,7 +49,7 @@ export const serialize: NewPlugin['serialize'] = (
       return `[${stringedValue}]`;
     }
     return `${stringedValue + SPACE}{${printObjectProperties(
-      val.sample,
+      val.lastSample || val.sample,
       config,
       indentation,
       depth,

@@ -673,6 +673,41 @@ describe.each([
       ).toThrowErrorMatchingSnapshot();
     }
   });
+
+  test('works with objectContaining', () => {
+    const fn = jest.fn();
+    // Call the function twice with different objects and verify that the
+    // correct comparison sample is still used (original sample isn't mutated)
+    fn({a: 1, b: 2});
+    fn({a: 3, b: 7});
+
+    if (isToHaveNth(calledWith)) {
+      jestExpect(fn)[calledWith](1, jestExpect.objectContaining({b: 2}));
+      jestExpect(fn)[calledWith](2, jestExpect.objectContaining({b: 7}));
+
+      expect(() =>
+        jestExpect(fn).not[calledWith](1, jestExpect.objectContaining({b: 2})),
+      ).toThrowErrorMatchingSnapshot();
+    } else {
+      jestExpect(fn)[calledWith](jestExpect.objectContaining({b: 7}));
+
+      // The function was never called with this value.
+      // ONLY { "b": 3 } should be shown in the error snapshot.
+      // TODO this is broken right now
+      //   Expected: <g>ObjectContaining {"a": 3, "b": 3}</>
+      //   Received
+      //          1: <r>{"a": 1, "b": 2}</>
+      //          2: <r>{"a": 3, "b": 7}</>
+      expect(() =>
+        jestExpect(fn)[calledWith](jestExpect.objectContaining({b: 3})),
+      ).toThrowErrorMatchingSnapshot();
+
+      // ONLY { "b": 7 } should be shown in the error snapshot.
+      expect(() =>
+        jestExpect(fn).not[calledWith](jestExpect.objectContaining({b: 7})),
+      ).toThrowErrorMatchingSnapshot();
+    }
+  });
 });
 
 describe('toHaveReturned', () => {
